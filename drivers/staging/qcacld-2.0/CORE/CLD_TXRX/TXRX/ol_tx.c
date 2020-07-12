@@ -632,6 +632,8 @@ static void merge_ocb_tx_ctrl_hdr(struct ocb_tx_ctrl_hdr_t *tx_ctrl,
 	}
 }
 
+#define MAX_RADIOTAP_LEN 256
+
 static inline adf_nbuf_t
 ol_tx_hl_base(
     ol_txrx_vdev_handle vdev,
@@ -641,10 +643,14 @@ ol_tx_hl_base(
 {
     struct ol_txrx_pdev_t *pdev = vdev->pdev;
     adf_nbuf_t msdu = msdu_list;
+    adf_nbuf_t msdu_drop_list = NULL;
     struct ol_txrx_msdu_info_t tx_msdu_info;
     struct ocb_tx_ctrl_hdr_t tx_ctrl;
 
     htt_pdev_handle htt_pdev = pdev->htt_pdev;
+
+    uint8_t rtap[MAX_RADIOTAP_LEN];
+    uint8_t rtap_len = 0;
     tx_msdu_info.peer = NULL;
 
     /*
@@ -655,6 +661,7 @@ ol_tx_hl_base(
      */
     while (msdu) {
         adf_nbuf_t next;
+        adf_nbuf_t prev_drop;
         struct ol_tx_frms_queue_t *txq;
         struct ol_tx_desc_t *tx_desc = NULL;
 
