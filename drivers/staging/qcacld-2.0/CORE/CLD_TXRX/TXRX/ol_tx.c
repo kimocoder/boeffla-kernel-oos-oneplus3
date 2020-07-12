@@ -667,6 +667,32 @@ ol_tx_hl_base(
          */
         next = adf_nbuf_next(msdu);
 
+        /*
+         * copy radiotap header out first.
+         */
+        if (VOS_MONITOR_MODE == vos_get_conparam()) {
+            struct ieee80211_radiotap_header *rthdr;
+            rthdr = (struct ieee80211_radiotap_header *)(adf_nbuf_data(msdu));
+            rtap_len = rthdr->it_len;
+            if (rtap_len > MAX_RADIOTAP_LEN) {
+                TXRX_PRINT(TXRX_PRINT_LEVEL_ERR,
+                           "radiotap length exceeds %d, drop it!\n",
+                           MAX_RADIOTAP_LEN);
+                adf_nbuf_set_next(msdu, NULL);
+                if (!msdu_drop_list)
+                    msdu_drop_list = msdu;
+                else
+                    adf_nbuf_set_next(prev_drop, msdu);
+                prev_drop = msdu;
+                msdu = next;
+                continue;
+            }
+            adf_os_mem_copy(rtap, rthdr, rtap_len);
+            adf_nbuf_pull_head(msdu, rtap_len);
+        }
+	   
+	    
+	    
 #if defined(CONFIG_TX_DESC_HI_PRIO_RESERVE)
         if (adf_os_atomic_read(&pdev->tx_queue.rsrc_cnt) >
                                         TXRX_HL_TX_DESC_HI_PRIO_RESERVED) {
@@ -685,7 +711,13 @@ ol_tx_hl_base(
              * tx descs for the remaining MSDUs.
              */
             TXRX_STATS_MSDU_LIST_INCR(pdev, tx.dropped.host_reject, msdu);
-            return msdu; /* the list of unaccepted MSDUs */
+
+		if (!msdu_drop_list)
+                msdu_drop_list = msdu;
+            else
+                adf_nbuf_set_next(prev_drop, msdu);
+            return msdu_drop_list; /* the list of unaccepted MSDUs */
+
         }
 
 //        OL_TXRX_PROT_AN_LOG(pdev->prot_an_tx_sent, msdu);
