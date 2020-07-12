@@ -828,6 +828,16 @@ ol_tx_hl_base(
          */
         htt_tx_desc_display(tx_desc->htt_tx_desc);
 
+		
+	        /* push radiotap as extra frag */
+        if (VOS_MONITOR_MODE == vos_get_conparam()) {
+            adf_nbuf_frag_push_head(
+                    msdu,
+                    rtap_len,
+                    (uint8_t *)rtap, /* virtual addr */
+                    0, 0 /* phys addr MSBs - n/a */);
+                    adf_nbuf_set_frag_is_wordstream(msdu, 1, 1);
+	
         ol_tx_enqueue(pdev, txq, tx_desc, &tx_msdu_info);
         if (tx_msdu_info.peer) {
             OL_TX_PEER_STATS_UPDATE(tx_msdu_info.peer, msdu);
@@ -841,7 +851,7 @@ MSDU_LOOP_BOTTOM:
     if (call_sched == true)
         ol_tx_sched(pdev);
 
-    return NULL; /* all MSDUs were accepted */
+    return msdu_drop_list; /* all MSDUs were accepted */
 }
 
 /**
