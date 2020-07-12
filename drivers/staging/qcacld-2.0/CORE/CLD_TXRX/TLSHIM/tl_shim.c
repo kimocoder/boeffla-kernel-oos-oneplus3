@@ -1254,7 +1254,7 @@ void *tlshim_peer_validity(void *vos_ctx, uint8_t sta_id)
 	}
 
 	peer = ol_txrx_peer_find_by_local_id(
-			((pVosContextType) vos_ctx)->pdev_txrx_ctx,
+			vos_get_context(VOS_MODULE_ID_TXRX,vos_ctx),
 			sta_id);
 	if (!peer) {
 		TLSHIM_LOGW("Invalid peer");
