@@ -495,16 +495,23 @@ int __hdd_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
        pDestMacAddress = (v_MACADDR_t*)skb->data;
        STAId = HDD_WLAN_INVALID_STA_ID;
 
-       hdd_get_transmit_sta_id(pAdapter, pDestMacAddress, &STAId);
-       if (STAId == HDD_WLAN_INVALID_STA_ID) {
-           hddLog(LOG1, "Invalid station id, transmit operation suspended");
-           goto drop_pkt;
+       /* use self peer directly in monitor mode */
+       if (VOS_MONITOR_MODE != vos_get_conparam()) {
+           hdd_get_transmit_sta_id(pAdapter, pDestMacAddress, &STAId);
+           if (STAId == HDD_WLAN_INVALID_STA_ID) {
+               hddLog(LOG1, "Invalid station id, transmit operation suspended");
+               goto drop_pkt;
+           }
+
+
+
+           vdev_temp = tlshim_peer_validity(
+                   (WLAN_HDD_GET_CTX(pAdapter))->pvosContext, STAId);
+       } else {
+           vdev_temp =
+               tlshim_selfpeer_vdev((WLAN_HDD_GET_CTX(pAdapter))->pvosContext);
        }
 
-       vdev_temp = tlshim_peer_validity(
-                     (WLAN_HDD_GET_CTX(pAdapter))->pvosContext, STAId);
-       if (!vdev_temp)
-           goto drop_pkt;
 
        vdev_handle = vdev_temp;
 

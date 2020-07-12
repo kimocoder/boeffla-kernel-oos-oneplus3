@@ -1265,6 +1265,33 @@ void *tlshim_peer_validity(void *vos_ctx, uint8_t sta_id)
 }
 
 /**
+ * tlshim_selfpeer_vdev() - get the vdev of self peer
+ * @vos_ctx: vos context
+ *
+ * Return: on success return vdev, NULL when self peer is invalid/NULL
+ */
+void *tlshim_selfpeer_vdev(void *vos_ctx)
+{
+	struct ol_txrx_pdev_t *pdev = vos_get_context(VOS_MODULE_ID_TXRX,
+							   vos_ctx);
+	struct ol_txrx_peer_t *peer;
+
+	if (!pdev) {
+		TLSHIM_LOGE("Txrx pdev is NULL");
+		return NULL;
+	}
+
+	peer = pdev->self_peer;
+	if (!peer) {
+		TLSHIM_LOGW("Invalid peer");
+		return NULL;
+	} else {
+		return peer->vdev;
+	}
+}
+
+
+/**
  * WLANTL_SendSTA_DataFrame() - transmit frame from upper layers
  * @vos_ctx: pointer to vos context
  * @vdev: vdev
