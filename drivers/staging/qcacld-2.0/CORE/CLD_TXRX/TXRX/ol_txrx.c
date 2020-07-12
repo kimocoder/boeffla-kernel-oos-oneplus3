@@ -538,6 +538,11 @@ ol_txrx_pdev_attach(
         pdev->htt_pkt_type = htt_pkt_type_native_wifi;
     } else if (pdev->frame_format == wlan_frm_fmt_802_3) {
         pdev->htt_pkt_type = htt_pkt_type_ethernet;
+
+    } else if (pdev->frame_format == wlan_frm_fmt_raw) {
+        pdev->htt_pkt_type = htt_pkt_type_raw;
+	    
+	    
     } else {
         VOS_TRACE(VOS_MODULE_ID_TXRX, VOS_TRACE_LEVEL_ERROR,
             "%s Invalid standard frame type: %d\n",
@@ -632,7 +637,10 @@ ol_txrx_pdev_attach(
             pdev->rx_opt_proc = ol_rx_fwd_check;
         }
     } else {
-        if (ol_cfg_rx_pn_check(pdev->ctrl_pdev)) {
+if (VOS_MONITOR_MODE == vos_get_conparam()) {
+            pdev->rx_opt_proc = ol_rx_deliver;
+        } else if (ol_cfg_rx_pn_check(pdev->ctrl_pdev)) {
+
             if (ol_cfg_rx_fwd_disabled(pdev->ctrl_pdev)) {
                 /*
                  * PN check done on host, rx->tx forwarding not done at all.
